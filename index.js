@@ -1,27 +1,32 @@
 const WIDTH = 6;
+const HEIGHT = 6;
 let interval;
 let timerSec = calcTimerSec(0, 0, 0);
 
 (async () => {
   const [, , h, m, s] = process.argv;
   timerSec = calcTimerSec(validate(h, 0), validate(m, 5), validate(s, 0));
+  console.log({
+    width: process.stdout.columns,
+    height: process.stdout.rows,
+  });
   await clearScreen();
   update();
 })();
 
 function validate(n, def) {
-  if (n === undefined) return def
-  const nInt = parseInt(n)
-  if (Number.isNaN(nInt)) return def
-  if (nInt < 0) return def
-  if (nInt > 59) return 59
-  return nInt
+  if (n === undefined) return def;
+  const nInt = parseInt(n);
+  if (Number.isNaN(nInt)) return def;
+  if (nInt < 0) return def;
+  if (nInt > 59) return 59;
+  return nInt;
 }
 
-async function draw(x, char) {
+async function draw(x, char, padTop = 0) {
   const arr = char.split("\n");
   for (let i = 0; i < WIDTH; i++) {
-    await write(x, i, arr[i]);
+    await write(x, i + padTop, arr[i]);
   }
 }
 
@@ -39,21 +44,27 @@ function calcTimerSec(h, m, s) {
 
 async function drawClock(h, m, s) {
   await clearScreen();
+  const totalWidth = 64;
+  const cols = process.stdout.columns;
+  const rows = process.stdout.rows
+  const paddingTop = HEIGHT < cols ? Math.floor((rows - HEIGHT) / 2) : 0
+  const paddingLeft =
+    totalWidth < cols ? Math.floor((cols - totalWidth) / 2) : 0;
   const hStr = h < 10 ? `0${h}` : h.toString();
-  await draw(0, chars[parseInt(hStr[0])]);
-  await draw(8, chars[parseInt(hStr[1])]);
+  await draw(0 + paddingLeft, chars[parseInt(hStr[0])], paddingTop);
+  await draw(8 + paddingLeft, chars[parseInt(hStr[1])], paddingTop);
 
-  await draw(16, chars[10]); // :
+  await draw(16 + paddingLeft, chars[10], paddingTop); // :
 
   const mStr = m < 10 ? `0${m}` : m.toString();
-  await draw(24, chars[parseInt(mStr[0])]);
-  await draw(32, chars[parseInt(mStr[1])]);
+  await draw(24 + paddingLeft, chars[parseInt(mStr[0])], paddingTop);
+  await draw(32 + paddingLeft, chars[parseInt(mStr[1])], paddingTop);
 
-  await draw(40, chars[10]); // :
+  await draw(40 + paddingLeft, chars[10], paddingTop); // :
 
   const sStr = s < 10 ? `0${s}` : s.toString();
-  await draw(48, chars[parseInt(sStr[0])]);
-  await draw(56, chars[parseInt(sStr[1])]);
+  await draw(48 + paddingLeft, chars[parseInt(sStr[0])], paddingTop);
+  await draw(56 + paddingLeft, chars[parseInt(sStr[1])], paddingTop);
 }
 
 async function update() {
