@@ -11,8 +11,8 @@ let timerSec = calcTimerSec(0, 5, 0);
   update();
 })();
 
-async function draw(x, num) {
-  const arr = num.split("\n");
+async function draw(x, char) {
+  const arr = char.split("\n");
   for (let i = 0; i < WIDTH; i++) {
     await write(x, i, arr[i]);
   }
