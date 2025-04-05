@@ -1,15 +1,22 @@
 const WIDTH = 6;
 let interval;
-let timerSec = calcTimerSec(0, 5, 0);
+let timerSec = calcTimerSec(0, 0, 0);
 
 (async () => {
   const [, , h, m, s] = process.argv;
-  if (h !== undefined && m !== undefined && s !== undefined) {
-    timerSec = calcTimerSec(h, m, s);
-  }
+  timerSec = calcTimerSec(validate(h, 0), validate(m, 5), validate(s, 0));
   await clearScreen();
   update();
 })();
+
+function validate(n, def) {
+  if (n === undefined) return def
+  const nInt = parseInt(n)
+  if (Number.isNaN(nInt)) return def
+  if (nInt < 0) return def
+  if (nInt > 59) return 59
+  return nInt
+}
 
 async function draw(x, char) {
   const arr = char.split("\n");
