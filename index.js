@@ -1,35 +1,90 @@
-const readline = require("node:readline")
+const readline = require("node:readline");
+
+// colors
+const WHITE = 37;
+const GREEN = 32;
+const YELLOW = 33;
+const BRIGHT_RED = 91;
+const BRIGHT_GREEN = 92;
+const BRIGHT_YELLOW = 93;
+const BRIGHT_MAGENTA = 95;
+const BRIGHT_CYAN = 96;
+
 const WIDTH = 6;
 const HEIGHT = 6;
-let isRunning = true
+let isRunning = true;
 let interval;
 let timerSec = calcTimerSec(0, 0, 0);
 
 (async () => {
   const [, , h, m, s] = process.argv;
   timerSec = calcTimerSec(validate(h, 0), validate(m, 5), validate(s, 0));
-  listenKeyPressed(key => {
+  listenKeyPressed((key) => {
     switch (key) {
-      case ' ': {
-        if (isRunning) {
-          pause()
-        } else {
-          play()
+      case " ":
+        {
+          if (isRunning) {
+            pause();
+          } else {
+            play();
+          }
         }
-      } break
+        break;
+      case "r":
+        {
+          clearInterval(interval);
+          timerSec = calcTimerSec(
+            validate(h, 0),
+            validate(m, 5),
+            validate(s, 0)
+          );
+          play();
+        }
+        break;
+      case "q":
+          process.exit(0);
     }
-  })
-  await clearScreen();
+  });
   play();
 })();
+
+async function play() {
+  isRunning = true;
+  const run = async () => {
+    const { h, m, s } = getTimeFromSeconds(timerSec);
+    await drawClock(h, m, s, BRIGHT_GREEN);
+    await showMenu();
+    if (h === 0 && m === 0 && s === 0) {
+      finish();
+    }
+    timerSec -= 1;
+  };
+  await run();
+  interval = setInterval(run, 1000);
+}
+
+async function pause() {
+  isRunning = false;
+  clearInterval(interval);
+  await clearScreen();
+  const { h, m, s } = getTimeFromSeconds(timerSec);
+  await drawClock(h, m, s, BRIGHT_RED);
+  await showMenu();
+}
+
+async function finish() {
+  clearInterval(interval);
+  await drawClock(0, 0, 0);
+  process.stdout.write("\n");
+}
 
 function listenKeyPressed(cb) {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-  })
-  rl.input.on('keypress', cb)
-  return rl
+  });
+  rl.input.on("keypress", cb);
+  return rl;
 }
 
 function validate(n, def) {
@@ -41,13 +96,6 @@ function validate(n, def) {
   return nInt;
 }
 
-async function draw(x, char, padTop = 0) {
-  const arr = char.split("\n");
-  for (let i = 0; i < WIDTH; i++) {
-    await write(x, i + padTop, arr[i]);
-  }
-}
-
 function getTimeFromSeconds(tm) {
   let m = Math.floor(tm / 60);
   const h = Math.floor(m / 60);
@@ -56,63 +104,50 @@ function getTimeFromSeconds(tm) {
   return { h, m, s };
 }
 
-
 function calcTimerSec(h, m, s) {
   return parseInt(h) * 3600 + parseInt(m) * 60 + parseInt(s);
 }
 
-async function drawClock(h, m, s) {
+async function showMenu() {
+  await write(
+    0,
+    process.stdout.rows,
+    "space: ⏵︎/⏸︎ | c: color | r: restart | q: quit"
+  );
+}
+
+async function drawClock(h, m, s, c) {
   await clearScreen();
   const totalWidth = 64;
   const cols = process.stdout.columns;
-  const rows = process.stdout.rows
-  const paddingTop = HEIGHT < cols ? Math.floor((rows - HEIGHT) / 2) : 0
-  const paddingLeft =
-    totalWidth < cols ? Math.floor((cols - totalWidth) / 2) : 0;
-  const hStr = h < 10 ? `0${h}` : h.toString();
-  await draw(0 + paddingLeft, chars[parseInt(hStr[0])], paddingTop);
-  await draw(8 + paddingLeft, chars[parseInt(hStr[1])], paddingTop);
+  const rows = process.stdout.rows;
+  const pt = HEIGHT < cols ? Math.floor((rows - HEIGHT) / 2) : 0;
+  const pl = totalWidth < cols ? Math.floor((cols - totalWidth) / 2) : 0;
+  const opts = { pt, c };
 
-  await draw(16 + paddingLeft, chars[10], paddingTop); // :
+  const hStr = h < 10 ? `0${h}` : h.toString();
+  await draw(0 + pl, chars[parseInt(hStr[0])], opts);
+  await draw(8 + pl, chars[parseInt(hStr[1])], opts);
+
+  await draw(16 + pl, chars[10], opts); // :
 
   const mStr = m < 10 ? `0${m}` : m.toString();
-  await draw(24 + paddingLeft, chars[parseInt(mStr[0])], paddingTop);
-  await draw(32 + paddingLeft, chars[parseInt(mStr[1])], paddingTop);
+  await draw(24 + pl, chars[parseInt(mStr[0])], opts);
+  await draw(32 + pl, chars[parseInt(mStr[1])], opts);
 
-  await draw(40 + paddingLeft, chars[10], paddingTop); // :
+  await draw(40 + pl, chars[10], opts); // :
 
   const sStr = s < 10 ? `0${s}` : s.toString();
-  await draw(48 + paddingLeft, chars[parseInt(sStr[0])], paddingTop);
-  await draw(56 + paddingLeft, chars[parseInt(sStr[1])], paddingTop);
+  await draw(48 + pl, chars[parseInt(sStr[0])], opts);
+  await draw(56 + pl, chars[parseInt(sStr[1])], opts);
 }
 
-async function play() {
-  isRunning = true
-  const run = async () => {
-    const { h, m, s } = getTimeFromSeconds(timerSec);
-    await drawClock(h, m, s);
-    if (h === 0 && m === 0 && s === 0) {
-      finish();
-    }
-    timerSec -= 1;
-    process.stdout.write("\n");
-  };
-  await run()
-  interval = setInterval(run, 1000);
-}
-
-async function pause() {
-  isRunning = false
-  clearInterval(interval);
-  // await clearScreen()
-  // await drawClock(0, 0, 0);
-  // process.stdout.write("\n");
-}
-
-async function finish() {
-  clearInterval(interval);
-  await drawClock(0, 0, 0);
-  process.stdout.write("\n");
+async function draw(x, char, opts) {
+  const { pt = 0, c = WHITE } = opts;
+  const arr = char.split("\n");
+  for (let i = 0; i < WIDTH; i++) {
+    await write(x, i + pt, color(c, arr[i]));
+  }
 }
 
 function clearScreen() {
@@ -129,6 +164,10 @@ function write(x, y, ...text) {
       process.stdout.write(...text, r);
     });
   });
+}
+
+function color(color, msg) {
+  return `\x1b[${color}m${msg}\x1b[0m`;
 }
 
 const chars = [
