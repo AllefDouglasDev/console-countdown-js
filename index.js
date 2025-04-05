@@ -4,7 +4,6 @@ let tm = getTimerSec(0, 5, 0);
 
 (async () => {
   const [,,h, m, s] =  process.argv
-  console.log(h, m, s)
   if (h !== undefined && m !== undefined && s !== undefined) {
     tm = getTimerSec(h, m, s)
   }
