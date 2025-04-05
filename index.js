@@ -1,18 +1,36 @@
+const readline = require("node:readline")
 const WIDTH = 6;
 const HEIGHT = 6;
+let isRunning = true
 let interval;
 let timerSec = calcTimerSec(0, 0, 0);
 
 (async () => {
   const [, , h, m, s] = process.argv;
   timerSec = calcTimerSec(validate(h, 0), validate(m, 5), validate(s, 0));
-  console.log({
-    width: process.stdout.columns,
-    height: process.stdout.rows,
-  });
+  listenKeyPressed(key => {
+    switch (key) {
+      case ' ': {
+        if (isRunning) {
+          pause()
+        } else {
+          play()
+        }
+      } break
+    }
+  })
   await clearScreen();
-  update();
+  play();
 })();
+
+function listenKeyPressed(cb) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  })
+  rl.input.on('keypress', cb)
+  return rl
+}
 
 function validate(n, def) {
   if (n === undefined) return def;
@@ -37,6 +55,7 @@ function getTimeFromSeconds(tm) {
   s = Math.floor(tm - (h * 60 * 60 + m * 60));
   return { h, m, s };
 }
+
 
 function calcTimerSec(h, m, s) {
   return parseInt(h) * 3600 + parseInt(m) * 60 + parseInt(s);
@@ -67,22 +86,33 @@ async function drawClock(h, m, s) {
   await draw(56 + paddingLeft, chars[parseInt(sStr[1])], paddingTop);
 }
 
-async function update() {
+async function play() {
+  isRunning = true
   const run = async () => {
     const { h, m, s } = getTimeFromSeconds(timerSec);
     await drawClock(h, m, s);
     if (h === 0 && m === 0 && s === 0) {
-      stop();
+      finish();
     }
     timerSec -= 1;
     process.stdout.write("\n");
   };
-  await run();
+  await run()
   interval = setInterval(run, 1000);
 }
 
-function stop() {
+async function pause() {
+  isRunning = false
   clearInterval(interval);
+  // await clearScreen()
+  // await drawClock(0, 0, 0);
+  // process.stdout.write("\n");
+}
+
+async function finish() {
+  clearInterval(interval);
+  await drawClock(0, 0, 0);
+  process.stdout.write("\n");
 }
 
 function clearScreen() {
