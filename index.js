@@ -1,11 +1,11 @@
 const WIDTH = 6;
 let interval;
-let tm = getTimerSec(0, 5, 0);
+let timerSec = calcTimerSec(0, 5, 0);
 
 (async () => {
-  const [,,h, m, s] =  process.argv
+  const [, , h, m, s] = process.argv;
   if (h !== undefined && m !== undefined && s !== undefined) {
-    tm = getTimerSec(h, m, s)
+    timerSec = calcTimerSec(h, m, s);
   }
   await clearScreen();
   update();
@@ -18,7 +18,7 @@ async function draw(x, num) {
   }
 }
 
-function calc(tm) {
+function getTimeFromSeconds(tm) {
   let m = Math.floor(tm / 60);
   const h = Math.floor(m / 60);
   m = m - h * 60;
@@ -26,36 +26,38 @@ function calc(tm) {
   return { h, m, s };
 }
 
-function getTimerSec(h, m, s) {
+function calcTimerSec(h, m, s) {
   return parseInt(h) * 3600 + parseInt(m) * 60 + parseInt(s);
+}
+
+async function drawClock(h, m, s) {
+  await clearScreen();
+  const hStr = h < 10 ? `0${h}` : h.toString();
+  await draw(0, chars[parseInt(hStr[0])]);
+  await draw(8, chars[parseInt(hStr[1])]);
+
+  await draw(16, chars[10]); // :
+
+  const mStr = m < 10 ? `0${m}` : m.toString();
+  await draw(24, chars[parseInt(mStr[0])]);
+  await draw(32, chars[parseInt(mStr[1])]);
+
+  await draw(40, chars[10]); // :
+
+  const sStr = s < 10 ? `0${s}` : s.toString();
+  await draw(48, chars[parseInt(sStr[0])]);
+  await draw(56, chars[parseInt(sStr[1])]);
 }
 
 async function update() {
   const run = async () => {
-    await clearScreen()
-    const { h, m, s } = calc(tm);
-
-    const hStr = h < 10 ? `0${h}` :  h.toString()
-    await draw(0, chars[parseInt(hStr[0])])
-    await draw(8, chars[parseInt(hStr[1])])
-
-    await draw(16, chars[10])
-
-    const mStr = m < 10 ? `0${m}` :  m.toString()
-    await draw(24, chars[parseInt(mStr[0])])
-    await draw(32, chars[parseInt(mStr[1])])
-
-    await draw(40, chars[10])
-
-    const sStr = s < 10 ? `0${s}` :  s.toString()
-    await draw(48, chars[parseInt(sStr[0])])
-    await draw(56, chars[parseInt(sStr[1])])
-
+    const { h, m, s } = getTimeFromSeconds(timerSec);
+    await drawClock(h, m, s);
     if (h === 0 && m === 0 && s === 0) {
       stop();
     }
-    tm -= 1;
-    process.stdout.write('\n')
+    timerSec -= 1;
+    process.stdout.write("\n");
   };
   await run();
   interval = setInterval(run, 1000);
@@ -76,9 +78,7 @@ function clearScreen() {
 function write(x, y, ...text) {
   return new Promise((r) => {
     process.stdout.cursorTo(x, y, () => {
-      process.stdout.write(...text, () => {
-        r();
-      });
+      process.stdout.write(...text, r);
     });
   });
 }
