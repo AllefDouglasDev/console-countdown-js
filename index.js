@@ -1,81 +1,68 @@
 const readline = require("node:readline");
 
-// colors
 const WHITE = 37;
-const GREEN = 32;
-const YELLOW = 33;
 const BRIGHT_RED = 91;
 const BRIGHT_GREEN = 92;
-const BRIGHT_YELLOW = 93;
 const BRIGHT_MAGENTA = 95;
-const BRIGHT_CYAN = 96;
 
-const HOUR_IN_SEC = 3600
-const MIN_IN_SEC = 60
+const HOUR_IN_SEC = 3600;
+const MIN_IN_SEC = 60;
 
 const WIDTH = 6;
 const HEIGHT = 6;
+
 let isRunning = true;
 let interval;
-let timerSec = 0;
+let timerInSec = 0;
 
 (async () => {
   const [, , h, m, s] = process.argv;
-  timerSec = calcTimerSec(validate(h, 0), validate(m, 5), validate(s, 0));
-  listenKeyPressed((key) => {
-    switch (key) {
-      case " ":
-        {
-          if (isRunning) {
-            pause();
-          } else {
-            play();
-          }
-        }
-        break;
-      case "r":
-        {
-          clearInterval(interval);
-          timerSec = calcTimerSec(
-            validate(h, 0),
-            validate(m, 5),
-            validate(s, 0)
-          );
-          play();
-        }
-        break;
-      case "h":
-        {
-          timerSec += HOUR_IN_SEC;
-        }
-        break;
-      case "m":
-        {
-          timerSec += MIN_IN_SEC;
-        }
-        break;
-      case "s":
-        {
-          timerSec += 10;
-        }
-        break;
-      case "q":
-        process.exit(0);
-    }
-  });
+  timerInSec = parseTimerToSec(validate(h, 0), validate(m, 5), validate(s, 0));
+  listenKeyPressed(key => handleKeyPressed(key, h, m, s));
   play();
 })();
+
+function handleKeyPressed(key, h, m, s) {
+  switch (key) {
+    case " ":
+      isRunning ? pause() : play();
+      break;
+    case "r":
+      {
+        clearInterval(interval);
+        timerInSec = parseTimerToSec(
+          validate(h, 0),
+          validate(m, 5),
+          validate(s, 0)
+        );
+        play();
+      }
+      break;
+    case "h":
+      timerInSec += HOUR_IN_SEC;
+      break;
+    case "m":
+      timerInSec += MIN_IN_SEC;
+      break;
+    case "s":
+      timerInSec += 10;
+      break;
+    case "q":
+      process.exit(0);
+  }
+}
 
 async function play() {
   isRunning = true;
   const run = async () => {
-    const { h, m, s } = getTimeFromSeconds(timerSec);
+    const { h, m, s } = getTimeFromSeconds(timerInSec);
     await drawClock(h, m, s, BRIGHT_GREEN);
     await showMenu();
-    if (h === 0 && m === 0 && s === 0) {
+    if (h <= 0 && m <= 0 && s <= 0) {
       finish();
+      return;
     }
-    timerSec -= 1;
+    timerInSec -= 1;
   };
   await run();
   interval = setInterval(run, 1000);
@@ -84,7 +71,7 @@ async function play() {
 async function pause() {
   isRunning = false;
   clearInterval(interval);
-  const { h, m, s } = getTimeFromSeconds(timerSec);
+  const { h, m, s } = getTimeFromSeconds(timerInSec);
   await drawClock(h, m, s, BRIGHT_RED);
   await showMenu();
 }
@@ -121,7 +108,7 @@ function getTimeFromSeconds(tm) {
   return { h, m, s };
 }
 
-function calcTimerSec(h, m, s) {
+function parseTimerToSec(h, m, s) {
   return parseInt(h) * HOUR_IN_SEC + parseInt(m) * MIN_IN_SEC + parseInt(s);
 }
 
