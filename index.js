@@ -6,13 +6,14 @@ const BRIGHT_GREEN = 92;
 const BRIGHT_MAGENTA = 95;
 
 const HOUR_IN_SEC = 3600;
+const HOUR_IN_MIN = 60;
 const MIN_IN_SEC = 60;
 
 const WIDTH = 6;
 const HEIGHT = 6;
 
 let isRunning = true;
-let interval;
+let intervalInstance;
 let timerInSec = 0;
 
 (async () => {
@@ -29,7 +30,7 @@ function handleKeyPressed(key, h, m, s) {
       break;
     case "r":
       {
-        clearInterval(interval);
+        clearInterval(intervalInstance);
         timerInSec = parseTimerToSec(
           validate(h, 0),
           validate(m, 5),
@@ -54,7 +55,7 @@ function handleKeyPressed(key, h, m, s) {
 
 async function play() {
   isRunning = true;
-  const run = async () => {
+  const update = async () => {
     const { h, m, s } = getTimeFromSeconds(timerInSec);
     await drawClock(h, m, s, BRIGHT_GREEN);
     await showMenu();
@@ -64,20 +65,20 @@ async function play() {
     }
     timerInSec -= 1;
   };
-  await run();
-  interval = setInterval(run, 1000);
+  await update();
+  intervalInstance = setInterval(update, 1000);
 }
 
 async function pause() {
   isRunning = false;
-  clearInterval(interval);
+  clearInterval(intervalInstance);
   const { h, m, s } = getTimeFromSeconds(timerInSec);
   await drawClock(h, m, s, BRIGHT_RED);
   await showMenu();
 }
 
 async function finish() {
-  clearInterval(interval);
+  clearInterval(intervalInstance);
   await drawClock(0, 0, 0, BRIGHT_MAGENTA);
   await showMenu();
 }
@@ -91,20 +92,20 @@ function listenKeyPressed(cb) {
   return rl;
 }
 
-function validate(n, def) {
-  if (n === undefined) return def;
+function validate(n, fallback) {
+  if (n === undefined) return fallback;
   const nInt = parseInt(n);
-  if (Number.isNaN(nInt)) return def;
-  if (nInt < 0) return def;
+  if (Number.isNaN(nInt)) return fallback;
+  if (nInt < 0) return fallback;
   if (nInt > 59) return 59;
   return nInt;
 }
 
-function getTimeFromSeconds(tm) {
-  let m = Math.floor(tm / MIN_IN_SEC);
-  const h = Math.floor(m / MIN_IN_SEC);
+function getTimeFromSeconds(sec) {
+  let m = Math.floor(sec / MIN_IN_SEC);
+  const h = Math.floor(m / HOUR_IN_MIN);
   m = m - h * MIN_IN_SEC;
-  s = Math.floor(tm - (h * HOUR_IN_SEC + m * MIN_IN_SEC));
+  s = Math.floor(sec - (h * HOUR_IN_SEC + m * MIN_IN_SEC));
   return { h, m, s };
 }
 
