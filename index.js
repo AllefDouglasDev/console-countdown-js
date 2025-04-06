@@ -9,8 +9,9 @@ const HOUR_IN_SEC = 3600;
 const HOUR_IN_MIN = 60;
 const MIN_IN_SEC = 60;
 
-const WIDTH = 6;
-const HEIGHT = 6;
+const CHAR_WIDTH = 6;
+const CHAR_HEIGHT = 6;
+const CLOCK_WIDTH = 64;
 
 let isRunning = true;
 let intervalInstance;
@@ -123,11 +124,10 @@ async function showMenu() {
 
 async function drawClock(h, m, s, c) {
   await clearScreen();
-  const totalWidth = 64;
   const cols = process.stdout.columns;
   const rows = process.stdout.rows;
-  const pt = HEIGHT < cols ? Math.floor((rows - HEIGHT) / 2) : 0;
-  const pl = totalWidth < cols ? Math.floor((cols - totalWidth) / 2) : 0;
+  const pt = CHAR_HEIGHT < rows ? Math.floor((rows - CHAR_HEIGHT) / 2) : 0;
+  const pl = CLOCK_WIDTH < cols ? Math.floor((cols - CLOCK_WIDTH) / 2) : 0;
   const opts = { pt, c };
 
   const hStr = h < 10 ? `0${h}` : h.toString();
@@ -150,7 +150,7 @@ async function drawClock(h, m, s, c) {
 async function draw(x, char, opts) {
   const { pt = 0, c = WHITE } = opts;
   const arr = char.split("\n");
-  for (let i = 0; i < WIDTH; i++) {
+  for (let i = 0; i < CHAR_WIDTH; i++) {
     await write(x, i + pt, color(c, arr[i]));
   }
 }
