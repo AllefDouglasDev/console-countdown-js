@@ -19,7 +19,7 @@ let timerInSec = 0;
 (async () => {
   const [, , h, m, s] = process.argv;
   timerInSec = parseTimerToSec(validate(h, 0), validate(m, 5), validate(s, 0));
-  listenKeyPressed(key => handleKeyPressed(key, h, m, s));
+  listenKeyPressed((key) => handleKeyPressed(key, h, m, s));
   play();
 })();
 
