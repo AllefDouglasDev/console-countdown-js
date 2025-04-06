@@ -10,11 +10,14 @@ const BRIGHT_YELLOW = 93;
 const BRIGHT_MAGENTA = 95;
 const BRIGHT_CYAN = 96;
 
+const HOUR_IN_SEC = 3600
+const MIN_IN_SEC = 60
+
 const WIDTH = 6;
 const HEIGHT = 6;
 let isRunning = true;
 let interval;
-let timerSec = calcTimerSec(0, 0, 0);
+let timerSec = 0;
 
 (async () => {
   const [, , h, m, s] = process.argv;
@@ -41,8 +44,23 @@ let timerSec = calcTimerSec(0, 0, 0);
           play();
         }
         break;
+      case "h":
+        {
+          timerSec += HOUR_IN_SEC;
+        }
+        break;
+      case "m":
+        {
+          timerSec += MIN_IN_SEC;
+        }
+        break;
+      case "s":
+        {
+          timerSec += 10;
+        }
+        break;
       case "q":
-          process.exit(0);
+        process.exit(0);
     }
   });
   play();
@@ -66,7 +84,6 @@ async function play() {
 async function pause() {
   isRunning = false;
   clearInterval(interval);
-  await clearScreen();
   const { h, m, s } = getTimeFromSeconds(timerSec);
   await drawClock(h, m, s, BRIGHT_RED);
   await showMenu();
@@ -74,8 +91,8 @@ async function pause() {
 
 async function finish() {
   clearInterval(interval);
-  await drawClock(0, 0, 0);
-  process.stdout.write("\n");
+  await drawClock(0, 0, 0, BRIGHT_MAGENTA);
+  await showMenu();
 }
 
 function listenKeyPressed(cb) {
@@ -97,22 +114,22 @@ function validate(n, def) {
 }
 
 function getTimeFromSeconds(tm) {
-  let m = Math.floor(tm / 60);
-  const h = Math.floor(m / 60);
-  m = m - h * 60;
-  s = Math.floor(tm - (h * 60 * 60 + m * 60));
+  let m = Math.floor(tm / MIN_IN_SEC);
+  const h = Math.floor(m / MIN_IN_SEC);
+  m = m - h * MIN_IN_SEC;
+  s = Math.floor(tm - (h * HOUR_IN_SEC + m * MIN_IN_SEC));
   return { h, m, s };
 }
 
 function calcTimerSec(h, m, s) {
-  return parseInt(h) * 3600 + parseInt(m) * 60 + parseInt(s);
+  return parseInt(h) * HOUR_IN_SEC + parseInt(m) * MIN_IN_SEC + parseInt(s);
 }
 
 async function showMenu() {
   await write(
     0,
     process.stdout.rows,
-    "space: ⏵︎/⏸︎ | c: color | r: restart | q: quit"
+    "space: ⏵︎/⏸︎ | r: restart | h: +1h | m: +1m | s: +10s | q: quit > "
   );
 }
 
