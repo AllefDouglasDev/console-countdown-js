@@ -1,4 +1,5 @@
 const readline = require("node:readline");
+const { exec } = require("node:child_process");
 
 const WHITE = 37;
 const BRIGHT_RED = 91;
@@ -82,6 +83,8 @@ async function finish() {
   clearInterval(intervalInstance);
   await drawClock(0, 0, 0, BRIGHT_MAGENTA);
   await showMenu();
+  const now = new Date().toLocaleString();
+  sendNotification("Timer finished", `Time finished at ${now}`);
 }
 
 function listenKeyPressed(cb) {
@@ -173,6 +176,17 @@ function write(x, y, ...text) {
 
 function color(color, msg) {
   return `\x1b[${color}m${msg}\x1b[0m`;
+}
+
+function sendNotification(title, msg) {
+  if (process.platform === "darwin") {
+    sendMacOSNotification(title, msg);
+  }
+}
+
+function sendMacOSNotification(title, msg) {
+  const cmd = `osascript -e 'display notification "${msg}" with title "${title}"'`;
+  exec(cmd);
 }
 
 const chars = [
